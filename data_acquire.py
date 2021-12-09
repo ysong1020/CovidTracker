@@ -1,26 +1,36 @@
 """
-Bonneville Power Administration, United States Department of Energy
+covid-19 data, US, New York Times
 """
 import time
 import sched
-import pandas
+import pandas as pd
+import numpy as np
 import logging
 import requests
+import pymango
 from io import StringIO
-
 import utils
-from database import upsert_bpa
+
+from database import upsert_data
+
+MAX_DOWNLOAD_ATTEMPT = 10
+
+urls = {'counties': 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv',
+        'states': 'https://github.com/nytimes/covid-19-data/blob/master/us-states.csv',
+        'us': 'https://github.com/nytimes/covid-19-data/blob/master/us.csv'}
 
 
-BPA_SOURCE = "https://transmission.bpa.gov/business/operations/Wind/baltwg.txt"
-MAX_DOWNLOAD_ATTEMPT = 5
-DOWNLOAD_PERIOD = 10         # second
+
+DOWNLOAD_PERIOD = 24*3600         # second --> every 24 hrs
+
 logger = logging.Logger(__name__)
+
 utils.setup_logger(logger, 'data.log')
 
+client = pymongo.MongoClient()
 
-def download_bpa(url=BPA_SOURCE, retries=MAX_DOWNLOAD_ATTEMPT):
-    """Returns BPA text from `BPA_SOURCE` that includes power loads and resources
+def download_data(url=urls['us'], retries=MAX_DOWNLOAD_ATTEMPT):
+    """Returns covid cases and deaths data in the US from `urls` that includes multiple links
     Returns None if network failed
     """
     text = None
@@ -32,25 +42,24 @@ def download_bpa(url=BPA_SOURCE, retries=MAX_DOWNLOAD_ATTEMPT):
         except requests.exceptions.HTTPError as e:
             logger.warning("Retry on HTTP Error: {}".format(e))
     if text is None:
-        logger.error('download_bpa too many FAILED attempts')
+        logger.error('download_data too many FAILED attempts')
     return text
 
 
-def filter_bpa(text):
+def filter_data(text):
     """Converts `text` to `DataFrame`, removes empty lines and descriptions
     """
     # use StringIO to convert string to a readable buffer
-    df = pandas.read_csv(StringIO(text), skiprows=11, delimiter='\t')
-    df.columns = df.columns.str.strip()             # remove space in columns name
-    df['Datetime'] = pandas.to_datetime(df['Date/Time'])
-    df.drop(columns=['Date/Time'], axis=1, inplace=True)
+    df = pd.read_csv(StringIO(text), delimiter=',') 
+    df.columns = df.columns.str.strip()             # remove space in columns name  
+    df['date'] = pd.to_datetime(df['date']) 
     df.dropna(inplace=True)             # drop rows with empty cells
     return df
 
 
 def update_once():
-    t = download_bpa()
-    df = filter_bpa(t)
+    t = download_data()
+    df = filter_data(t)
     upsert_bpa(df)
 
 

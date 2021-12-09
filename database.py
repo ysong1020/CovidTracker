@@ -11,20 +11,26 @@ utils.setup_logger(logger, 'db.log')
 RESULT_CACHE_EXPIRATION = 10             # seconds
 
 
-def upsert_bpa(df):
+def upsert_data(df, geo='us'):
     """
-    Update MongoDB database `energy` and collection `energy` with the given `DataFrame`.
+    Update MongoDB database `us` and geo -- different geographic info (states/counties) with the given `DataFrame`.
     """
-    db = client.get_database("energy")
-    collection = db.get_collection("energy")
+    db = client.get_database("us")
+    collection = db.get_collection(geo)
     update_count = 0
-    for record in df.to_dict('records'):
-        result = collection.replace_one(
-            filter={'Datetime': record['Datetime']},    # locate the document if exists
-            replacement=record,                         # latest document
-            upsert=True)                                # update if exists, insert if not
-        if result.matched_count > 0:
-            update_count += 1
+
+    if geo == 'us':
+        for state in states:
+            df = df[df['state'] == state]
+        for record in df.to_dict('records'):
+            result = collection.replace_one(
+                filter={'Datetime': record['Datetime']},    # locate the document if exists
+                replacement=record,                         # latest document
+                upsert=True)                                # update if exists, insert if not
+            if result.matched_count > 0:
+                update_count += 1
+    else:
+        for record 
     logger.info("rows={}, update={}, ".format(df.shape[0], update_count) +
                 "insert={}".format(df.shape[0]-update_count))
 
