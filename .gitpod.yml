@@ -1,4 +1,4 @@
-# image: gitpod/workspace-mongodb
+image: gitpod/workspace-mongodb
 ports:
 - port: 8050
   onOpen: open-preview
