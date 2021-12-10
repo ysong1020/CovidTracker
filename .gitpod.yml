@@ -11,7 +11,7 @@ tasks:
 - init: /workspace/gitpod-dash/run.sh
 - command: cp -r .jupyter /home/gitpod/
 # - command: mongod
-- command: pip3 install -r requirements.txt && (python3 data_acquire.py & python3 app.py)
+- command: pip3 install -r requirements.txt # && (python3 data_acquire.py & python3 app.py)
 # vscode:
 #   extensions:
 #     - ms-python.python@2019.9.34911:NHtRMp5fFB2KUUw72DlGug==
