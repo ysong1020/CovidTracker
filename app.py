@@ -41,25 +41,13 @@ def project_description():
     Returns overall project description in markdown
     """
     return html.Div(children=[dcc.Markdown('''
-        # US COVID-19 Tracker
-        The coronavirus pandemic has caused more than one and half million deaths over the world.
-        The COVID-19 has exhausted the United States, and it seems a dark and deadly winter is waiting ahead.
-        Therefore, it is of crucial importance to understand and project the trend of COVID-19 cases in US
-        so that policy-makers can come up with short-term and long-term strategies to limit the spread and
-        mitigate the effect of another outbreak in the near future.
-        **US COVID-19 tracker is also a tool to assist making strategies.**
-        It can be used to understand what factors might affect the spread of the pandemic in US
-        and project the trend if more precautions and restrictions are imposed.
+        # US Covid Tracker
+        An web app to visualize the covid cases and deaths in the US
+        
         ## Data Source
-        Covid-19 tracker mainly utilizes historical and live covid-19 data from
+        Covid tracker utilizes historical and live covid-19 data from
         [New York Times github repository](https://github.com/nytimes/covid-19-data).
-        The hirarchical case and death [data](https://raw.githubusercontent.com/nytimes/covid-19-data/master/us.csv)
         **is regularly updated every day**.
-        Also, the data for state and county population is merged to obtain the positive rate over population at different
-        geographical levels.
-        Additionally, the [survey data](https://raw.githubusercontent.com/nytimes/covid-19-data/master/mask-use/mask-use-by-county.csv)
-        by New York time on maks use by county is investigated to see if there exists a
-        correlation between the outbreak and mask use frequency in each state. All data sets in this project are well-structured.
         ''', className='eleven columns', style={'paddingLeft': '5%'})], className="row")
 
 def visualization_description():
@@ -69,14 +57,11 @@ def visualization_description():
     return html.Div(children=[
       dcc.Markdown('''
             ## EDA & Interactive Visualization
-            This project uses `Dash` and `Plotly` for visualization. We use the
-            high-level components/tools in Dash to provide compact figures which allow user
-            to choose what to display. For example, we utilized radio items to select targets
-            (case or death number), dropdown layout to select the state, and slider to select
-            time points.
+            This project uses `Dash` and `Plotly` for visualization. 
             Curve plots are used to show the time variation of cumulative and daily reported
-            cases and deaths for the  national-level and state-level covid-19 data. Heat maps are used
-            to track the outbreak geographically.
+            cases and deaths for the  national-level and state-level covid-19 data. Heat maps of
+            geography data integrated are used o track the outbreak geographically. Pie chart helps
+            visualize the cases in a state-wise manner
         ''', className='row eleven columns', style={'paddingLeft': '5%'}),
     ]
     )
@@ -88,16 +73,7 @@ def enhancement_description():
     return html.Div(children=[
       dcc.Markdown('''
       ## Enhancement
-      Public health experts suggest that face coverings can substantially slow the transmission
-      of covid. In this section, we firstly use a heatmap to show the propensity of people to wear
-      masks in each county. This heat map is based on the survey data from a large number of interviews
-      conducted by the global data and survey firm Dynata at the request of The New York Times.
-      Next, we attempt to understand what factors might affect the spread of the pandamic in US states.
-      For this analysis, we select two responsive variables including case fatality rate and infection rate,
-      and two predictors, namely average wear-mask probability and population density. A simple and intuitive
-      linear correlation analysis is conducted. For Covid data, we use the latest state-level data for demonstration.
-      In order to obtain the state-level mask-use data, the county-level data is aggregated over states and we take
-      the average of features in each state to get the state-level features.
+      Correlation analysis
         ''', className='row eleven columns', style={'paddingLeft': '5%'}),
     ]
     )
@@ -264,139 +240,6 @@ def heat_map(label):
     fig = go.Figure(data=fig['frames'][-1]['data'], frames=fig['frames'], layout=fig.layout)
     fig.update_coloraxes(colorbar_title=f"<b>Color</b><br>Confirmed {label.title()}")
     fig.layout.pop('updatemenus')
-    return fig
-
-
-def heat_map_mask_use():
-    df = df_dict['counties']
-    df['countyfp'] = df['countyfp'].apply(lambda x: str(int(x)).zfill(5))
-    df['wear_mask_prob'] = 0.25 * df['rarely'] + 0.5 * df['sometimes'] + \
-                0.75 * df['frequently'] + 1.0 * df['always']
-    df['county'] = df.apply(lambda x: fip_to_county(x.countyfp), axis=1)
-    df['state_code'] = df.apply(lambda x: fip_to_state(x.countyfp), axis=1)
-    df = df.drop(df[df['state_code'] == 'N/A'].index).reset_index(drop=True)
-    df['state'] = df['state_code'].apply(lambda x: state_map_dict[x])
-    fig = px.choropleth(df,
-                        locations='countyfp',
-                        geojson=county_json,
-                        scope="usa",
-                        color='wear_mask_prob', # a column in the dataset
-                        hover_name='state', # column to add to hover information
-                        hover_data = {'county': True, 'countyfp': False, 'wear_mask_prob': ':.3f'},
-                        color_continuous_scale=px.colors.sequential.Reds,
-                       )
-    fig.update_layout(title_text="Heat Map - Who is Wearing Masks in US Counties"),
-    fig.update_coloraxes(colorbar_title="<b>Color</b><br>Wear Mask Prob")
-    #fig.update(layout_coloraxis_showscale=False)
-    fig.update_layout(margin={"r":0,"l":0,"b":0})
-    return fig
-
-def scatter_matrix():
-    df = df_dict['states']
-    df.fips = df.fips.apply(lambda x: str(x).zfill(2))
-    df = df[df.date == max(df.date)]
-    df = df.drop(columns='date', axis=1).reset_index(drop=True)
-    state_pop = df_dict['state-population']
-    state_area =  df_dict['state-area']
-
-    mask_use = df_dict['counties']
-    mask_use.countyfp = mask_use.countyfp.apply(lambda x: str(x).zfill(5))
-    mask_use['wear_mask_prob'] = 0.25 * mask_use['rarely'] + 0.5 * mask_use['sometimes'] + \
-                    0.75 * mask_use['frequently'] + 1.0 * mask_use['always']
-    mask_use['state_code'] = mask_use.apply(lambda x: fip_to_state(x.countyfp), axis=1)
-    mask_use['county'] = mask_use.apply(lambda x: fip_to_county(x.countyfp), axis=1)
-    df_agg = mask_use.groupby('state_code').agg(['mean'])
-    df_agg.columns = ["_".join(x) for x in np.ravel(df_agg.columns)]
-    df_agg.reset_index(inplace=True)
-    df_agg.rename(columns={'wear_mask_prob_mean' : 'wear_mask_prob'}, inplace=True)
-    df_agg = df_agg[['state_code', 'wear_mask_prob']]
-    df_agg.drop(df_agg[df_agg['state_code'] == 'N/A'].index, inplace = True)
-    df_agg.drop(df_agg[df_agg['state_code'] == 'DC'].index, inplace = True)
-    df_agg['state'] = df_agg['state_code'].apply(lambda x: state_map_dict[x])
-    df_agg = df_agg[['state', 'wear_mask_prob']]
-    data_frames = [df, state_pop, state_area, df_agg]
-    df_merged = reduce(lambda left, right: pd.merge(left,right,on=['state'],
-                                                how='inner'), data_frames)
-
-    df_merged['CFR'] = df_merged['deaths'] / df_merged['cases']
-    df_merged['IR'] = df_merged['cases'] / df_merged['total']
-    df_merged['PD'] = df_merged['total'] / df_merged['area']
-    df_merged['WMP'] = df_merged['wear_mask_prob']
-    df_ana = df_merged.loc[:, ['state', 'CFR', 'IR', 'PD', 'WMP']]
-    df_ana[['CFR', 'IR', 'PD', 'WMP']] = np.round(df_ana[['CFR', 'IR', 'PD', 'WMP']], 3)
-
-    fig = go.Figure(data=go.Splom(
-                dimensions=[dict(label='CFR', # 'Fatality rate',
-                                 values=df_ana['CFR']),
-                            dict(label='IR', #'Infection rate',
-                                 values=df_ana['IR']),
-                            dict(label='PD', #'Population density',
-                                 values=df_ana['PD']),
-                            dict(label='WMP', #'Wear mask prob.',
-                                 values=df_ana['WMP'])],
-                text=df_ana['state'],
-#                 hovertemplate="%{x}, %{y}",
-                marker=dict(showscale=False, # colors encode categorical variables
-                            line_color='white', line_width=0.5),
-                showupperhalf=False,
-                ))
-
-    fig.update_layout(
-    title='Scatter Matrix',
-    dragmode='select',
-    width=600,
-    height=600,
-    hovermode='closest',
-    )
-    return fig
-
-
-def correlation_matrix():
-    df = df_dict['states']
-    df.fips = df.fips.apply(lambda x: str(x).zfill(2))
-    df = df[df.date == max(df.date)]
-    df = df.drop(columns='date', axis=1).reset_index(drop=True)
-    state_pop = df_dict['state-population']
-    state_area =  df_dict['state-area']
-
-    mask_use = df_dict['mask-use-by-county']
-    mask_use.countyfp = mask_use.countyfp.apply(lambda x: str(x).zfill(5))
-    mask_use['wear_mask_prob'] = 0.25 * mask_use['rarely'] + 0.5 * mask_use['sometimes'] + \
-                    0.75 * mask_use['frequently'] + 1.0 * mask_use['always']
-    mask_use['state_code'] = mask_use.apply(lambda x: fip_to_state(x.countyfp), axis=1)
-    mask_use['county'] = mask_use.apply(lambda x: fip_to_county(x.countyfp), axis=1)
-    df_agg = mask_use.groupby('state_code').agg(['mean'])
-    df_agg.columns = ["_".join(x) for x in np.ravel(df_agg.columns)]
-    df_agg.reset_index(inplace=True)
-    df_agg.rename(columns={'wear_mask_prob_mean' : 'wear_mask_prob'}, inplace=True)
-    df_agg = df_agg[['state_code', 'wear_mask_prob']]
-    df_agg.drop(df_agg[df_agg['state_code'] == 'N/A'].index, inplace = True)
-    df_agg.drop(df_agg[df_agg['state_code'] == 'DC'].index, inplace = True)
-    df_agg['state'] = df_agg['state_code'].apply(lambda x: state_map_dict[x])
-    df_agg = df_agg[['state', 'wear_mask_prob']]
-    data_frames = [df, state_pop, state_area, df_agg]
-    df_merged = reduce(lambda left, right: pd.merge(left,right,on=['state'],
-                                                how='inner'), data_frames)
-
-    df_merged['CFR'] = df_merged['deaths'] / df_merged['cases']
-    df_merged['IR'] = df_merged['cases'] / df_merged['total']
-    df_merged['PD'] = df_merged['total'] / df_merged['area']
-    df_merged['WMP'] = df_merged['wear_mask_prob']
-    df_ana = df_merged.loc[:, ['state', 'CFR', 'IR', 'PD', 'WMP']]
-    df_ana[['CFR', 'IR', 'PD', 'WMP']] = np.round(df_ana[['CFR', 'IR', 'PD', 'WMP']], 3)
-    df_corr = df_ana[['CFR', 'IR', 'PD', 'WMP']].corr()
-
-    fig = go.Figure(data=go.Heatmap(z=df_corr,
-                                    x=['CFR', 'IR', 'PD', 'WMP'],
-                                    y=['CFR', 'IR', 'PD', 'WMP'],
-                                    colorscale='Blues',
-                                   hovertemplate=" Corr(%{x}, %{y}) = %{z:.2f}"),
-                   )
-    fig.update_layout(
-        title='Correlation Matrix',
-        height=600,
-        width=600,
-        )
     return fig
 
 
@@ -587,64 +430,18 @@ def visualization_summary():
 
     ])
 
-def enhancement_summary():
-    """
-    All Enhancement details should be arranged here.
-    """
-    return html.Div(children=[
-         dcc.Markdown('''
-          ### Who is Wearing Masks in US Counties？
-         ''', className='row eleven columns', style={'paddingLeft': '6%'}),
-         dcc.Graph(id='mask-use-by-county', figure=heat_map_mask_use(),
-                   style={'height': 800, 'width': 1000, 'display': 'inline-block'}),
 
-         dcc.Markdown('''
-          ### Whether Population Density and Propensity of Wearing Masks Affect the Spread?
-         ''', className='row eleven columns', style={'paddingLeft': '0%'}),
-        html.Div([
-             html.Label( ['CFR: Case Fatality Rate'],
-                        style={'font-weight': 'bold', 'float': 'left',
-                               'color': 'white', 'display': 'inline-block',
-                               },
-                        ),
-             html.Label( ['IR: Infeaction Rate',],
-                        style={'font-weight': 'bold', 'float': 'left','margin-left': '100px',
-                               'color': 'white', 'display': 'inline-block',
-                               },
-                        ),
-             html.Label( ['PD: Population Density',],
-                        style={'font-weight': 'bold', 'float': 'left', 'margin-left': '100px',
-                               'color': 'white', 'display': 'inline-block',
-                               },
-                        ),
-             html.Label( ['WMP: Wear Mask Probability'],
-                style={'font-weight': 'bold', 'float': 'left','margin-left': '100px',
-                       'color': 'white', 'display': 'inline-block',
-                       },
-                ),
-             dcc.Graph(id='scatter-matrix', figure=scatter_matrix(),
-                       style={'width': '48%',  'display': 'inline-block'}),
-             dcc.Graph(id='correlation-matrix', figure=correlation_matrix(),
-                       style={'width': '48%', 'float':'right', 'display': 'inline-block'}),
-         ], style={'width': '100%',  'display': 'inline-block'}),
-    ]
-                   )
 
-# Sequentially add page components to the app's layout
-def dynamic_layout():
-    return html.Div([
+app.layout = html.Div([
         page_header(),
         html.Hr(),
         project_description(),
         visualization_description(),
         visualization_summary(),
         enhancement_description(),
-        enhancement_summary(),
-        # architecture_summary(),
+        architecture_summary(),
     ], className='row', id='content')
 
-# set layout to a function which updates upon reloading
-app.layout = dynamic_layout
 
-if __name__ == '__main__':
-    app.run_server(debug=True, port=8888, host='0.0.0.0')
+
+app.run_server(debug=True, host="0.0.0.0")

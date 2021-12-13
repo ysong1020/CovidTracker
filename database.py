@@ -8,7 +8,7 @@ import utils
 client = pymongo.MongoClient()
 logger = logging.Logger(__name__)
 utils.setup_logger(logger, 'db.log')
-RESULT_CACHE_EXPIRATION = 10             # seconds
+RESULT_CACHE_EXPIRATION = 3600 * 24            # seconds
 
 geo = ['us','states','counties']
 
@@ -29,14 +29,14 @@ def fetch_all_data():
     return ret_dict
 
 
-_fetch_all_db_as_df_cache = expiringdict.ExpiringDict(max_len=10,
+_fetch_all_data_as_df_cache = expiringdict.ExpiringDict(max_len=10,
                                                        max_age_seconds=RESULT_CACHE_EXPIRATION)
 
 
 def fetch_all_data_as_df(allow_cached=False):
-    """Converts list of dicts returned by `fetch_all_bpa` to DataFrame with ID removed
+    """Converts list of dicts returned by `fetch_all_data` to DataFrame with ID removed
     Actual job is done in `_worker`. When `allow_cached`, attempt to retrieve timed cached from
-    `_fetch_all_bpa_as_df_cache`; ignore cache and call `_work` if cache expires or `allow_cached`
+    `_fetch_all_data_as_df_cache`; ignore cache and call `_work` if cache expires or `allow_cached`
     is False.
     """
     def _work():
