@@ -1,11 +1,20 @@
 import dash
 from dash import dcc
 from dash import html
+import json
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 from dash.dependencies import Input, Output
 from utils import get_state_codes, get_state_name, daily_increase, moving_average
 from utils import all_states, state_code_dict, state_map_dict, fip_to_county, fip_to_state
+from functools import reduce
+from datetime import datetime
+from urllib.request import urlopen
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+
 from database import fetch_all_data_as_df
 
 # Definitions of constants. This projects uses extra CSS stylesheet at `./assets/style.css`
@@ -430,8 +439,6 @@ def visualization_summary():
 
     ])
 
-
-
 app.layout = html.Div([
         page_header(),
         html.Hr(),
@@ -442,6 +449,5 @@ app.layout = html.Div([
         architecture_summary(),
     ], className='row', id='content')
 
-
-
-app.run_server(debug=True, host="0.0.0.0")
+if __name__ == '__main__':
+    app.run_server(debug=True, host='0.0.0.0')
