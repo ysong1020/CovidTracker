@@ -21,8 +21,8 @@ from database import fetch_all_data_as_df
 COLORS = ['rgb(67,67,67)', 'rgb(115,115,115)', 'rgb(49,130,189)', 'rgb(189,189,189)']
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css', '/assets/style.css']
 colors = {
-"cases": 'rgba(80, 26, 80, 0.2)',
-"deaths": 'rgba(16, 112, 2, 0.2)'
+"cases": 'rgb(49,130,189)',
+"deaths": 'rgb(16, 112, 2)'
 }
 
 # Define the dash app first
@@ -100,7 +100,7 @@ def time_series_cumulative(label):
     stack=False
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=x, y=df[label], mode='lines', name=label,
-                                line={'width': 2, 'color': colors[label]},
+                                line={'width': 3, 'color': colors[label]},
                                 stackgroup='stack' if stack else None))
     # fig.add_trace(go.Scatter(x=x, y=df['Load'], mode='lines', name='Load',
     #                          line={'width': 2, 'color': 'orange'}))
