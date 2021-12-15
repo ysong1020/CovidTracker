@@ -18,7 +18,6 @@ from plotly.subplots import make_subplots
 from database import fetch_all_data_as_df
 
 # Definitions of constants. This projects uses extra CSS stylesheet at `./assets/style.css`
-COLORS = ['rgb(67,67,67)', 'rgb(115,115,115)', 'rgb(49,130,189)', 'rgb(189,189,189)']
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css', '/assets/style.css']
 colors = {
 "cases": 'rgb(49,130,189)',
@@ -41,8 +40,8 @@ def page_header():
                  className="ten columns"),
         html.A([html.Img(id='logo', src=app.get_asset_url('github.png'),
                          style={'height': '35px', 'paddingTop': '7%'}),
-                html.Span('Old boys', style={'fontSize': '2rem', 'height': '35px', 'bottom': 0,
-                                                'paddingLeft': '4px', 'color': '#a3a7b0',
+                html.Span('Doudou Yu & Yifei Song', style={'fontSize': '2rem', 'height': '35px', 'bottom': 0,
+                                                'paddingLeft': '6px', 'color': '#a3a7b0',
                                                 'textDecoration': 'none'})],
                className="two columns row",
                href='https://github.com/ddfishbean/CovidTracker'),
@@ -92,9 +91,9 @@ def enhancement_description():
     )
 
 # Defines the dependencies of interactive components
-@app.callback(Output('time-series-total', 'figure'),
+@app.callback(Output('cd', 'figure'),
              Input('target-label', 'value'))
-def time_series_cumulative(label):
+def cd(label):
     df = df_dict['us']
     x = df['date']
     stack=False
@@ -116,9 +115,9 @@ def time_series_cumulative(label):
                       xaxis_title='Date/Time')
     return fig
 
-@app.callback(Output('time-series-daily', 'figure'),
+@app.callback(Output('cd_stack', 'figure'),
              Input('daily-label', 'value'))
-def time_series_daily(label, window_size=7):
+def cd_stack(label, window_size=7):
     df = df_dict['us']
     x = df['date']
     stack=True
@@ -212,7 +211,7 @@ def visualization_summary():
 
             # Time series curves for cumulative cases and deaths in US
             dcc.Markdown('''
-            #### Time-series cumulative cases and deaths
+            #### Accumulated cases and deaths in the US
             ''', className='row eleven columns', style={'paddingLeft': '5%'}),
 
             html.Div([
@@ -235,13 +234,13 @@ def visualization_summary():
                         'font-weight': 'bold',
                         'color': 'white',
                         }),],  style={'width': '98%', 'display': 'inline-block'}),
-                dcc.Graph(id='time-series-total', style={'height': 500, 'width': 1100})
+                dcc.Graph(id='cd', style={'height': 500, 'width': 1100})
                 ],
                 style={'width': '98%', 'float': 'right', 'display': 'inline-block'}),
 
             # Time series curves for daily cases and deaths in US
                     dcc.Markdown('''
-            #### Time-series daily reported cases and deaths
+            #### Accumulated cases and deaths in the US (Stacked)
             ''', className='row eleven columns', style={'paddingLeft': '5%'}),
             html.Div([
                 html.Div([
@@ -263,7 +262,7 @@ def visualization_summary():
                         'font-weight': 'bold',
                         'color': 'white',
                         }),],  style={'width': '98%', 'display': 'inline-block'}),
-                dcc.Graph(id='time-series-daily', style={'height': 500, 'width': 1100})
+                dcc.Graph(id='cd_stack', style={'height': 500, 'width': 1100})
             ],
                 style={'width': '98%', 'float': 'right', 'display': 'inline-block'}),
 
